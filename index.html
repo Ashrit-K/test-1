@@ -1,0 +1,1365 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hong Kong + Macau Visual Itinerary</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #1e2528;
+      --muted: #667277;
+      --paper: #f6f3ee;
+      --panel: #ffffff;
+      --line: #d7ddd9;
+      --sea: #dbeef2;
+      --land: #ece7dc;
+      --accent: #006d77;
+      --accent-2: #b85c38;
+      --accent-3: #5f6f52;
+      --shadow: 0 18px 40px rgba(35, 45, 48, 0.13);
+      --map-height: 660px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: var(--paper);
+    }
+
+    .shell {
+      max-width: 1760px;
+      margin: 0 auto;
+      padding: 28px;
+    }
+
+    header {
+      margin-bottom: 22px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 34px;
+      line-height: 1.08;
+      letter-spacing: 0;
+    }
+
+    .dek {
+      margin: 0;
+      max-width: 850px;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.5;
+    }
+
+    .app-frame {
+      display: grid;
+      grid-template-columns: 92px minmax(0, 1fr);
+      gap: 14px;
+      align-items: start;
+    }
+
+    .tabs {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      position: sticky;
+      top: 18px;
+      overflow: visible;
+      padding: 0;
+      margin: 0;
+    }
+
+    .tab {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      color: var(--ink);
+      border-radius: 999px;
+      width: 100%;
+      min-width: 0;
+      padding: 8px 8px;
+      cursor: pointer;
+      text-align: center;
+      box-shadow: none;
+      font-size: 13px;
+      line-height: 1.1;
+    }
+
+    .tab span {
+      display: block;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.2;
+      margin-top: 2px;
+    }
+
+    .tab.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .tab.active span {
+      color: rgba(255, 255, 255, 0.78);
+    }
+
+    .page {
+      display: none;
+    }
+
+    #pages {
+      min-width: 0;
+    }
+
+    .page.active {
+      display: block;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(720px, 1.58fr) minmax(330px, 0.72fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .panel {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .panel-head {
+      padding: 18px 20px 12px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .eyebrow {
+      margin: 0 0 6px;
+      color: var(--accent);
+      font-weight: 700;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 24px;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+
+    .summary {
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .map-wrap {
+      padding: 0;
+      background: #dce9eb;
+      position: relative;
+      isolation: isolate;
+    }
+
+    .leaflet-map {
+      width: 100%;
+      height: var(--map-height);
+      min-height: 430px;
+      background: #dce9eb;
+      font-family: inherit;
+    }
+
+    .map-label {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      z-index: 500;
+      max-width: min(360px, calc(100% - 28px));
+      padding: 10px 12px;
+      border: 1px solid rgba(30, 37, 40, 0.1);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.92);
+      box-shadow: 0 12px 28px rgba(35, 45, 48, 0.15);
+      backdrop-filter: blur(8px);
+      pointer-events: none;
+    }
+
+    .map-label strong {
+      display: block;
+      color: var(--accent);
+      font-size: 12px;
+      line-height: 1.15;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .map-label span {
+      display: block;
+      margin-top: 3px;
+      color: var(--ink);
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1.25;
+    }
+
+    .timeline {
+      padding: 10px 0;
+      max-height: 650px;
+      overflow: auto;
+    }
+
+    .event {
+      display: grid;
+      grid-template-columns: 98px 1fr;
+      gap: 14px;
+      padding: 14px 20px;
+      border-bottom: 1px solid #eef0ed;
+    }
+
+    .event:last-child {
+      border-bottom: 0;
+    }
+
+    .time {
+      color: var(--accent);
+      font-weight: 700;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .event-heading {
+      display: flex;
+      align-items: flex-start;
+      gap: 9px;
+      margin-bottom: 5px;
+    }
+
+    .event-title-copy {
+      min-width: 0;
+    }
+
+    .event h3 {
+      margin: 0;
+      font-size: 15px;
+      line-height: 1.25;
+      letter-spacing: 0;
+    }
+
+    .event-place-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 5px;
+    }
+
+    .place-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      max-width: 100%;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.25;
+    }
+
+    .place-pill .stop-num {
+      width: 20px;
+      height: 20px;
+      font-size: 10px;
+    }
+
+    .event p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .legend {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      padding: 12px 16px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 12px;
+      background: #fbfcfb;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+      background: var(--accent);
+    }
+
+    .dot.shopping {
+      background: var(--accent-2);
+    }
+
+    .dot.food {
+      background: var(--accent-3);
+    }
+
+    .stop-key {
+      padding: 12px 16px 14px;
+      border-top: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .stop-key-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 9px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .stop-key-head strong {
+      color: var(--ink);
+      font-size: 12px;
+    }
+
+    .stop-key-list {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 7px 14px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      max-height: 170px;
+      overflow: auto;
+    }
+
+    .stop-key-list li {
+      display: grid;
+      grid-template-columns: 24px 1fr;
+      align-items: start;
+      gap: 7px;
+      min-width: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.3;
+    }
+
+    .stop-key-list span:last-child {
+      min-width: 0;
+    }
+
+    .stop-num {
+      width: 22px;
+      height: 22px;
+      display: inline-grid;
+      place-items: center;
+      flex: 0 0 auto;
+      border-radius: 999px;
+      background: var(--accent);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .stop-num.shopping {
+      background: var(--accent-2);
+    }
+
+    .stop-num.food {
+      background: var(--accent-3);
+    }
+
+    .stop-num.logistics {
+      background: #334e68;
+    }
+
+    .leaflet-control-attribution {
+      font-size: 10px;
+    }
+
+    .leaflet-container {
+      color: var(--ink);
+      font-family: inherit;
+    }
+
+    .leaflet-control-zoom a {
+      color: var(--ink);
+    }
+
+    .leaflet-reset-control {
+      margin-top: 7px;
+    }
+
+    .leaflet-reset-control button {
+      min-width: 54px;
+      height: 28px;
+      border: 0;
+      border-radius: 2px;
+      background: #fff;
+      color: var(--ink);
+      cursor: pointer;
+      font: 700 12px/1 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .leaflet-reset-control button:hover {
+      background: #f4f6f4;
+    }
+
+    .leaflet-number-icon {
+      background: transparent;
+      border: 0;
+    }
+
+    .stop-marker {
+      width: 32px;
+      height: 32px;
+      display: grid;
+      place-items: center;
+      border-radius: 50% 50% 50% 0;
+      border: 3px solid #fff;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 800;
+      box-shadow: 0 9px 20px rgba(24, 38, 44, 0.28);
+      transform: translate(-1px, -4px) rotate(-45deg);
+      transition: transform 140ms ease, box-shadow 140ms ease, outline-color 140ms ease;
+    }
+
+    .stop-marker span {
+      display: block;
+      transform: rotate(45deg);
+    }
+
+    .stop-marker.shopping {
+      background: var(--accent-2);
+    }
+
+    .stop-marker.food {
+      background: var(--accent-3);
+    }
+
+    .stop-marker.default {
+      background: var(--accent);
+    }
+
+    .stop-marker.logistics {
+      background: #334e68;
+    }
+
+    .stop-marker.active {
+      outline: 5px solid rgba(240, 162, 2, 0.6);
+      outline-offset: 3px;
+      box-shadow: 0 12px 26px rgba(24, 38, 44, 0.34);
+      transform: translate(-1px, -4px) rotate(-45deg) scale(1.17);
+    }
+
+    .leaflet-popup-content {
+      margin: 9px 11px;
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .map-note {
+      padding: 10px 16px 14px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.4;
+      border-top: 1px solid var(--line);
+      background: #fbfcfb;
+    }
+
+    .overview-summary-event {
+      cursor: default;
+    }
+
+    .overview-summary-event .time span {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: none;
+    }
+
+    .route-list {
+      flex: 0 1 auto;
+      max-height: var(--map-height);
+      min-height: 0;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      padding: 8px 0;
+    }
+
+    .mini-event {
+      display: grid;
+      grid-template-columns: 78px 1fr;
+      gap: 8px;
+      padding: 7px 0;
+      border-bottom: 1px solid #f0f1ef;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.35;
+    }
+
+    .mini-event:last-child {
+      border-bottom: 0;
+    }
+
+    .mini-event strong {
+      color: var(--ink);
+      font-weight: 700;
+    }
+
+    .mini-event-main {
+      min-width: 0;
+    }
+
+    .mini-event-title {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--ink);
+      font-weight: 700;
+    }
+
+    .mini-event-place {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin: 4px 0 2px;
+      color: var(--muted);
+    }
+
+    .event {
+      cursor: pointer;
+      border-left: 4px solid transparent;
+    }
+
+    .event.active {
+      background: #fff8ea;
+      border-left-color: #f0a202;
+    }
+
+    @media (max-width: 1020px) {
+      :root {
+        --map-height: 520px;
+      }
+
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+    }
+
+    @media (max-width: 900px) {
+      .app-frame {
+        grid-template-columns: 1fr;
+      }
+
+      .tabs {
+        position: static;
+        flex-direction: row;
+        overflow-x: auto;
+        padding-bottom: 14px;
+      }
+
+      .tab {
+        min-width: 112px;
+        text-align: center;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .shell {
+        padding: 16px;
+      }
+
+      h1 {
+        font-size: 27px;
+      }
+
+      .event {
+        grid-template-columns: 1fr;
+        gap: 4px;
+      }
+
+      .stop-key-list {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .map-label {
+        position: static;
+        max-width: none;
+        border-width: 0 0 1px;
+        border-radius: 0;
+        box-shadow: none;
+      }
+
+    }
+
+    @media (max-width: 760px) {
+      :root {
+        --map-height: 430px;
+      }
+
+      .stop-key-list {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header>
+      <div>
+        <h1>Hong Kong + Macau Visual Itinerary</h1>
+        <p class="dek">A day-by-day route visualization for May 26 to Jun 1. Each day is its own page with an interactive Hong Kong / Macau map, numbered stops, shopping chunks, food stops, and logistics anchors.</p>
+      </div>
+    </header>
+
+    <div class="app-frame">
+      <nav class="tabs" id="tabs" aria-label="Itinerary pages"></nav>
+      <section id="pages"></section>
+    </div>
+  </main>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    const days = [
+      {
+        id: "overview",
+        tab: "Overview",
+        date: "Full Trip",
+        title: "Trip Shape At A Glance",
+        summary: "The trip starts west on Hong Kong Island, crosses into TST/Kowloon, uses one full Macau day, puts the Kowloon culture / Mong Kok shopping day on Day 4, moves Lantau to Day 6, then closes from Wan Chai before the airport.",
+        points: [
+          ["HKG Airport", 22.3080, 113.9185, "logistics"],
+          ["Ramada Sai Ying Pun", 22.2871, 114.1420, "hotel"],
+          ["Harbour City / Sinn", 22.2975, 114.1687, "shopping"],
+          ["Central / Soho", 22.2828, 114.1543, "explore"],
+          ["The Peak", 22.2711, 114.1499, "sight"],
+          ["Macau", 22.1938, 113.5390, "sight"],
+          ["Hygge TST", 22.2977, 114.1722, "hotel"],
+          ["Ngong Ping", 22.2559, 113.9051, "sight"],
+          ["Mong Kok / Watchdrobe", 22.3165, 114.1710, "shopping"],
+          ["Repulse Bay", 22.2367, 114.1970, "sight"],
+          ["Causeway Bay", 22.2797, 114.1840, "shopping"],
+          ["Grand Hyatt Wan Chai", 22.2800, 114.1730, "hotel"],
+          ["HKG Airport", 22.3080, 113.9185, "logistics"]
+        ],
+        events: [],
+        overview: true
+      },
+      {
+        id: "day1",
+        tab: "Day 1",
+        date: "May 26, Tue",
+        title: "Arrival + Sinn Pickup + Symphony Of Lights",
+        summary: "Airport arrival, Ramada bag drop, Po Kee lunch, Sai Ying Pun / Art Lane, optional Kennedy Town, one cross-harbour move to TST, Sinn pickup, Symphony viewing, Mak's Noodle, and Ramada check-in.",
+        points: [
+          ["HKG Airport", 22.3080, 113.9185, "logistics"],
+          ["Hong Kong Station", 22.2849, 114.1589, "logistics"],
+          ["Ramada Sai Ying Pun", 22.2871, 114.1420, "hotel"],
+          ["Po Kee BBQ", 22.2866, 114.1336, "food"],
+          ["Art Lane", 22.2860, 114.1400, "sight"],
+          ["Kennedy Town Waterfront", 22.2825, 114.1270, "sight"],
+          ["Harbour City / K11 Buffer", 22.2968, 114.1693, "shopping"],
+          ["City Chain Harbour City", 22.2975, 114.1687, "shopping"],
+          ["TST Waterfront Viewing Stretch", 22.2937, 114.1698, "sight"],
+          ["Mak's Noodle K11 MUSEA", 22.2946, 114.1746, "food"],
+          ["Ramada Sai Ying Pun", 22.2871, 114.1420, "hotel"]
+        ],
+        events: [
+          ["09:30", "Land at HKG", "Immigration, bags, customs, then orient for Airport Express. Keep PAR, hotel address, City Chain email, and payment card accessible.", "logistics", [0]],
+          ["10:30-10:55", "Airport Express to Hong Kong Station", "Airport Express chain: Airport Station start -> Airport Express -> Hong Kong Station end. Fast, luggage-friendly rail into Central.", "logistics", [0, 1]],
+          ["10:55-11:20", "Transfer to Ramada", "MTR chain: Hong Kong Station start -> walk through Central station complex, Island Line toward Kennedy Town -> Sai Ying Pun end -> short map-guided walk to Ramada.", "logistics", [1, 2]],
+          ["11:20", "Bag drop at Ramada", "Bag drop only. Keep passports, City Chain email, watch docs, transit card, and the intended payment card with you.", "logistics", [2]],
+          ["11:50-12:00", "Out the door from Ramada", "Planner anchor: leave Ramada by 11:50 so Po Kee stays a clean noon lunch. Keep only day essentials with you.", "logistics", [2, 3]],
+          ["12:00-13:00", "Po Kee lunch", "Roast-meat lunch near the hotel side. Order for two light eaters: share one roast-meat rice or lai fun/noodle bowl, then add one smaller second plate/bowl only if still hungry. Must-try: char siu or roast goose/duck depending what looks best. Lighter: plain lai fun/noodle soup with a smaller roast-meat add-on instead of two full rice plates. Flow: no-frills local roast-meat shop; order quickly, eat efficiently, and do not linger. Fallback: Ichiran TST if Po Kee is full or timing breaks; use the solo-booth/order-sheet flow, one classic tonkotsu ramen each, lower richness/garlic/spice, and skip extras.", "food", [3]],
+          ["13:00-14:10", "Sai Ying Pun / Art Lane", "First HK neighborhood texture: slopes, murals, older streets, and local storefronts. Keep it loose and low-pressure.", "sight", [4]],
+          ["14:10-14:20", "MTR to Kennedy Town", "MTR chain: Sai Ying Pun start, Island Line toward Kennedy Town -> Kennedy Town end. Short hop to the west-end waterfront.", "logistics", [4, 5]],
+          ["14:20-15:00", "Kennedy Town waterfront", "Harbour-side breather. Walk, sit briefly if needed, and take in the west-end view. Energy-based stop: skip it and move to TST earlier if the redeye, heat, rain, or delays catch up.", "sight", [5]],
+          ["15:00-16:00", "MTR to TST / Harbour City", "MTR chain: Kennedy Town or Sai Ying Pun start, Island Line toward Chai Wan -> Admiralty transfer, Tsuen Wan Line toward Tsuen Wan -> Tsim Sha Tsui end -> walk to Harbour City. Taxi only if energy collapses.", "logistics", [5, 6]],
+          ["16:00-17:00", "TST refreshment + mall buffer", "Restroom, water or coffee, air-conditioning, light browsing, and internal Harbour City / K11 wayfinding before the watch pickup.", "shopping", [6]],
+          ["17:00-18:15", "Sinn 903 pickup at City Chain", "Target 17:00, latest comfortable arrival 17:30. Compare dials, inspect the watch, test chrono, verify serial/warranty/receipt, resize bracelet, confirm international debit acceptance, and wear it for a few minutes before leaving.", "shopping", [7]],
+          ["18:15-19:20", "Walk to TST viewing stretch", "Walk chain: City Chain / Gateway Arcade start -> Canton Road / Star Ferry / Hong Kong Cultural Centre side -> TST waterfront viewing stretch end. Primary target: railing zone just east of the Star Ferry piers before the denser K11 / Avenue of Stars crowd pocket.", "sight", [7, 8]],
+          ["19:20-20:00", "Settle for Symphony viewing", "Be in place by 19:20-19:30. Do not anchor exactly at the Clock Tower; use it as a landmark/pass-through. If blocked or crowded, keep walking east 3-5 minutes toward Avenue of Stars / K11.", "sight", [8]],
+          ["20:00-20:15", "Symphony of Lights", "Full show from TST waterfront / Avenue of Stars side. Official viewing areas here include live music; use mobile audio backup if speakers are weak or the crowd is noisy.", "sight", [8]],
+          ["20:15-20:25", "Exit east toward K11", "Walk chain: TST waterfront viewing stretch start -> Avenue of Stars / K11 MUSEA end. Move with the crowd flow rather than backtracking toward Star Ferry.", "logistics", [8, 9]],
+          ["20:25-21:15", "Mak's Noodle dinner", "Light local dinner near the promenade. Order for two light eaters: wonton noodle soup each, or one wonton noodle plus one sui gow/dumpling bowl to share if you want it lighter. Must-try: wonton noodles. Lighter: soup bowls without fried sides or extra heavy add-ons. Flow: quick-turnover noodle shop; sit where assigned, order fast, eat efficiently, and do not treat it as a long dinner. If the queue is silly, keep dinner simple inside K11/nearby TST rather than backtracking.", "food", [9]],
+          ["21:15-22:00", "Return to Ramada + check in", "MTR chain: Tsim Sha Tsui start, Tsuen Wan Line toward Central -> Admiralty transfer, Island Line toward Kennedy Town -> Sai Ying Pun end -> walk to Ramada. Proper hotel check-in, shower, water, charging, and Day 2 alarm.", "logistics", [9, 10]]
+        ]
+      },
+      {
+        id: "day2",
+        tab: "Day 2",
+        date: "May 27, Wed",
+        title: "HK Island Classics + Peak Sunset",
+        summary: "First full HK Island day: 06:45 wake, Bakehouse, Man Mo, PMQ, MisterChrono, Yat Lok, Tai Kwun, optional Tram View Cafe, booked Peak Tram one-way up + Sky Terrace 428, Lugard Road, sunset, Kau Kee dinner, and Ramada return.",
+        points: [
+          ["Ramada Sai Ying Pun", 22.2871, 114.1420, "hotel"],
+          ["Bakehouse Soho", 22.2822, 114.1519, "food"],
+          ["Man Mo Temple", 22.2841, 114.1505, "sight"],
+          ["PMQ / Soho", 22.2836, 114.1510, "shopping"],
+          ["MisterChrono HK", 22.2828, 114.1543, "shopping"],
+          ["Yat Lok", 22.2824, 114.1555, "food"],
+          ["Tai Kwun", 22.2817, 114.1545, "sight"],
+          ["Tram View Cafe", 22.2775, 114.1595, "food"],
+          ["Peak Tram Lower Terminus", 22.2762, 114.1595, "logistics"],
+          ["Lugard Road Lookout", 22.2756, 114.1446, "sight"],
+          ["Sky Terrace 428", 22.2711, 114.1499, "sight"],
+          ["Kau Kee Restaurant", 22.2846, 114.1523, "food"],
+          ["Ramada Sai Ying Pun", 22.2871, 114.1420, "hotel"]
+        ],
+        events: [
+          ["06:45", "Wake at Ramada / out the door 07:30", "Earlier start, but not a rushed start. Check rain, humidity, and Peak visibility. Target out the door by 07:30; the goal is margin before the 15:30+ Peak chain.", "logistics", [0]],
+          ["07:30-08:00", "MTR to Central / Soho", "MTR chain: Sai Ying Pun start, Island Line toward Chai Wan -> Central end -> walk uphill to Soho / Bakehouse. Keep the pace easy; this is not a hiking morning.", "logistics", [0, 1]],
+          ["08:00-08:30", "Bakehouse Soho breakfast", "Quick bakery / coffee stop. For two light eaters: one sourdough egg tart each plus coffee, or one extra pastry to share only if hungry.", "food", [1]],
+          ["08:30-09:30", "Man Mo Temple + Sheung Wan streets", "Historic temple on Hollywood Road with incense coils and old Sheung Wan lanes around it. Step inside quietly, observe the atmosphere, then wander nearby antique and herbal-shop streets.", "sight", [2]],
+          ["09:30-10:30", "PMQ / Soho wander", "Former police married-quarters complex turned design, retail, and culture hub. Browse independent shops, courtyards, small galleries, and the surrounding Soho lanes without turning it into a shopping mission.", "shopping", [3]],
+          ["10:30-11:00", "MisterChrono HK strap browse", "30 min max. Focus on 22mm rubber/FKM, hybrid, and sportier Sinn 903 straps. Leave leather, suede, and canvas value browsing for Horo on Day 4.", "shopping", [4]],
+          ["11:00-11:45", "Buffer near PMQ / Soho", "Use this as heat, rain, queue, or fatigue insurance after PMQ and MisterChrono. If everything is smooth, slow-walk or grab coffee; if not, protect the lunch and Peak timing.", "logistics", [3]],
+          ["12:00-13:00", "Yat Lok lunch", "No-frills roast-goose lunch. Order for two light eaters: share one roast goose with lai fun noodles in clear broth, then add one lighter plate or bowl only if still hungry. Must-try: roast goose with lai fun. Lighter: soy chicken or char siu over rice/noodle soup; skip roast pork belly before the Peak. Flow: queue, sit where directed, shared tables possible, order fast, eat, leave. Since Kau Kee is now dinner, keep lunch to Yat Lok or a very light nearby backup rather than duplicating beef noodles earlier.", "food", [5]],
+          ["13:00-13:30", "Walk toward Tai Kwun", "Walk chain: Yat Lok / Stanley Street start -> Soho / Hollywood Road -> Tai Kwun end. Short digestion buffer; no need to arrive early.", "logistics", [5, 6]],
+          ["13:30-15:00", "Tai Kwun", "Restored Central Police Station / prison / magistracy compound. Walk the courtyards, heritage corners, prison/magistracy areas, and any current exhibitions that look interesting.", "sight", [6]],
+          ["15:00-15:15", "Walk to Tram View Cafe", "Walk chain: Tai Kwun start -> Garden Road / Tramway Path -> Tram View Cafe end. This uses the buffer; skip it and go straight toward the Peak Tram lower terminus if timing tightens.", "logistics", [6, 7]],
+          ["15:15-15:45", "Tram View Cafe", "Optional compact novelty coffee / tea stop with the Peak Tram passing right beside the cafe. Treat it as a drink and photo stop, not a meal, and do not protect it if the day is already running late.", "food", [7]],
+          ["15:45-16:10", "Walk to Peak Tram lower terminus", "Walk chain: Tram View Cafe start -> Garden Road / Peak Tram lower terminus end. Do not add another stop; the Mid-Levels Escalator is only a natural street-texture glimpse if it fits.", "logistics", [7, 8]],
+          ["16:10-16:30", "Arrive Peak Tram lower terminus", "Small buffer before the sunset crowd. Use restrooms and water before joining the tram flow.", "logistics", [8]],
+          ["16:30-17:15", "Peak Tram queue + ascent", "Peak Tram chain: Garden Road lower terminus start -> Peak Tram uphill -> Peak terminus / Sky Terrace 428 end. Ticket booked: one-way Peak Tram up + Sky Terrace 428, flexible-date normal pass, 2 adults. Use the normal pre-purchased ticket holder queue, not Ruby priority. Advance tickets reduce friction but do not remove sunset queues.", "logistics", [8, 10]],
+          ["17:15-18:15", "Lugard Road lookout walk", "Easy paved viewpoint walk from The Peak, not a full trail. Walk out toward Lugard Road Lookout for skyline/harbour angles, then turn back rather than committing to the full loop.", "sight", [10, 9]],
+          ["18:15-19:15", "Sky Terrace 428 sunset", "Classic first-HK skyline viewpoint. Admission is included in the booked Klook voucher. Use the paid terrace for the big harbour view, take photos before and during sunset, then simply look for a few minutes rather than rushing through it.", "sight", [10]],
+          ["19:15-20:10", "Descend from The Peak", "Minibus chain: The Peak Galleria start -> Green Minibus 1 toward Central -> Central / IFC-side end -> walk or short taxi to Kau Kee on Gough Street. Budget 10-20 min wait after sunset, 20-30 min if crowded; Citybus 15 is easier but slower. Peak Tram down only if the queue looks light.", "logistics", [10, 11]],
+          ["20:30-21:30", "Kau Kee dinner", "Legendary beef-brisket noodle shop, not a reservation dinner. Public listings generally show Mon-Sat 12:30-22:30 and Sunday/public-holiday closed, so Wednesday May 27 at 20:30 works on paper; still sanity-check same-day hours before descending from the Peak. Order for two light eaters: one clear-broth beef brisket noodle plus one curry beef brisket / tendon noodle to share, or one bowl each if actually hungry. Must-try: beef brisket noodles; curry version if you want the richer order. Lighter: clear-broth brisket, no extra sides. Flow: queue, shared tables likely, order decisively, eat quickly, no lingering. Fallback: Ăn Chơi, 15-17 Mercer Street, if Kau Kee is closed, queue is silly, or you want a more comfortable sit-down dinner.", "food", [11]],
+          ["21:45", "Return to Ramada", "MTR chain: Kau Kee / Gough Street start -> walk downhill to Central or Sheung Wan station, Island Line toward Kennedy Town -> Sai Ying Pun end -> walk to Ramada. Avoid adding Lan Kwai Fong or bar detours.", "logistics", [11, 12]],
+          ["23:00", "Sleep", "Hard stop. Day 3 is Macau plus hotel switch, so protect the morning logistics.", "logistics", [12]]
+        ]
+      },
+      {
+        id: "day3",
+        tab: "Day 3",
+        date: "May 28, Thu",
+        title: "Macau Day Trip + Hotel Switch",
+        summary: "Macau day with the hotel switch deferred to evening: Ramada checkout and bag storage, optional Bakehouse grab-and-go, booked Sheung Wan to Outer Harbour ferry, Senado / St Paul's / Mount Fortress, Fat Siu Lau, A-Ma Temple, Venetian, booked Taipa to Sheung Wan ferry return, Ramada bag pickup, then MTR to Hygge.",
+        points: [
+          ["Ramada Sai Ying Pun", 22.2871, 114.1420, "hotel"],
+          ["Bakehouse Soho", 22.2822, 114.1519, "food"],
+          ["Hong Kong Macau Ferry Terminal", 22.2872, 114.1517, "logistics"],
+          ["Macau Outer Harbour", 22.1979, 113.5584, "logistics"],
+          ["Senado Square", 22.1938, 113.5390, "sight"],
+          ["Ruins of St Paul's", 22.1975, 113.5409, "sight"],
+          ["Mount Fortress", 22.1971, 113.5420, "sight"],
+          ["Fat Siu Lau", 22.1915, 113.5374, "food"],
+          ["Margaret's Cafe e Nata", 22.1919, 113.5413, "food"],
+          ["A-Ma Temple", 22.1855, 113.5316, "sight"],
+          ["The Venetian Macao", 22.1486, 113.5617, "sight"],
+          ["Lord Stow's Bakery", 22.1486, 113.5617, "food"],
+          ["Taipa Ferry Terminal", 22.1631, 113.5743, "logistics"],
+          ["Hong Kong Macau Ferry Terminal", 22.2872, 114.1517, "logistics"],
+          ["Ramada Sai Ying Pun", 22.2871, 114.1420, "hotel"],
+          ["Hygge TST", 22.2977, 114.1722, "hotel"]
+        ],
+        events: [
+          ["06:30", "Wake at Ramada / out the door 07:35", "Pack the Macau day bag and luggage. Target out of the room by 07:15 and out the door from Ramada by 07:35 after checkout and luggage storage. Keep passports, ferry QR screenshots, HKD/MOP cash, cards, charger, light jacket, and comfortable shoes accessible. Optional breakfast is handled later at Bakehouse Soho only if timing is clean.", "logistics", [0]],
+          ["07:15-07:35", "Check out + leave bags at Ramada", "Leave luggage with the Ramada front desk and keep only the Macau day bag. This avoids the inefficient morning cross-harbour luggage transfer to Hygge.", "logistics", [0]],
+          ["07:35-08:00", "Move toward Bakehouse / Sheung Wan", "MTR chain: Sai Ying Pun start, Island Line toward Chai Wan -> Sheung Wan end -> walk uphill to Bakehouse Soho if timing is clean. If checkout or bag storage slips, skip breakfast and go straight to Shun Tak.", "logistics", [0, 1]],
+          ["08:00-08:15", "Optional Bakehouse Soho breakfast", "Optional shortlist breakfast, not mandatory. Grab two sourdough egg tarts plus coffee, or one egg tart each and one pastry to share. Takeaway only; skip if there is a queue or it is not open cleanly at 08:00.", "food", [1]],
+          ["08:15-08:35", "Bakehouse to Shun Tak Centre", "Walk chain: Bakehouse Soho start -> downhill toward Sheung Wan / Shun Tak Centre -> Hong Kong Macau Ferry Terminal 3/F end. Do not add another coffee stop; ferry timing controls the morning.", "logistics", [1, 2]],
+          ["08:35-08:55", "Shun Tak Centre ferry buffer", "Restroom, water if needed, ticket / QR sanity check, and finding the right TurboJET gate. If Bakehouse was skipped, this becomes the easy terminal coffee/snack buffer.", "logistics", [2]],
+          ["08:55-09:30", "Ferry check-in and HK immigration", "Arrive at least 30 min before sailing. With e-ticket or QR, go through the ticket gate/check-in flow and keep passports out.", "logistics", [2]],
+          ["09:30-10:30", "TurboJET to Macau Outer Harbour", "Ferry chain: Hong Kong Macau Ferry Terminal / Shun Tak start -> TurboJET sailing -> Macau Outer Harbour Ferry Terminal end. Ticket booked: 09:30 TurboJET, economy, 2 adults. Approx. 60 min crossing; keep passports and tickets accessible for arrival.", "logistics", [2, 3]],
+          ["10:30-10:55", "Macau arrival and immigration", "Clear Macau immigration and pull a small amount of MOP only if needed. HKD is widely accepted 1:1, but small change may come back in MOP.", "logistics", [3]],
+          ["10:55-11:15", "Bus toward Senado Square", "Bus chain: Macau Outer Harbour Ferry Terminal start -> public bus toward Almeida Ribeiro / Senado Square -> Senado Square end. Use taxi only if bus wait is annoying or lunch timing starts to slip.", "logistics", [3, 4]],
+          ["11:15-11:40", "Senado Square", "UNESCO old-town core: Portuguese wave pavement, pastel civic buildings, fountain, and dense pedestrian lanes. Take quick first-look photos, then keep moving uphill before St Paul's crowds thicken.", "sight", [4]],
+          ["11:40-12:15", "Ruins of St Paul's", "Walk Rua de Sao Paulo up to Macau's postcard facade. Do the staircase view, look at the carved facade details, and go behind/inside only if the flow is easy.", "sight", [5]],
+          ["12:15-12:45", "Mount Fortress viewpoint", "Short uphill add-on beside St Paul's. Best quick peninsula panorama and old cannon/photo angles; Macao Museum is optional only if running ahead.", "sight", [6]],
+          ["12:45-13:00", "Walk to Rua da Felicidade", "Walk chain: Mount Fortress / St Paul's area start -> downhill through the old-town lanes -> Rua da Felicidade end. Use it as a reset before lunch rather than adding snack stalls.", "logistics", [6, 7]],
+          ["13:00-14:15", "Fat Siu Lau lunch", "Old Macanese / Portuguese institution. Order for two light eaters: share one signature roast pigeon plus one lighter main like African chicken or Portuguese chicken; add vegetables or soup only if needed. Must-try: roast pigeon. Lighter: caldo verde, vegetables, or one shared chicken dish instead of multiple heavy mains. Flow: call ahead in the morning if possible; table service is brisk and 60-75 min is the right pace. If Fat Siu Lau is full or timing slips, eat lightly around Senado and preserve the Cotai / return-ferry plan rather than forcing a second full restaurant stop.", "food", [7]],
+          ["14:15-14:35", "Walk to Margaret's Cafe e Nata", "Walk chain: Rua da Felicidade / Fat Siu Lau start -> central old-town lanes -> Margaret's Cafe e Nata end. Check same-day hours and be ready to skip if the queue or early close makes it inefficient.", "logistics", [7, 8]],
+          ["14:35-14:55", "Margaret's egg-tart stop", "Order two warm egg tarts total, plus coffee or tea only if wanted. Counter-order / quick-seat energy; cash is easiest. Skip without regret if closed because Lord Stow's is later.", "food", [8]],
+          ["14:55-15:35", "Bus to A-Ma Temple", "Bus chain: Margaret's / Senado area start -> public bus toward Barra / A-Ma Temple -> A-Ma Temple end. This adds Macau texture beyond Senado and St Paul's; use taxi only if delayed.", "logistics", [8, 9]],
+          ["15:35-16:05", "A-Ma Temple", "One of Macau's oldest temples and tied to the origin story of the name Macau. Walk the hillside halls, incense areas, pavilions, and harbour-facing corners respectfully and compactly.", "sight", [9]],
+          ["16:05-16:55", "Bus toward Cotai / Venetian", "Bus chain: A-Ma Temple / Barra start -> public bus toward Cotai / Venetian -> Venetian Macao end. Bus routing is slower but fits the public-transit default; taxi fallback only if timing slips badly.", "logistics", [9, 10]],
+          ["16:55-18:20", "The Venetian Macao", "Big integrated resort with recreated Venice streets, canals, painted-sky ceilings, casino floor, and mall. Do not try to complete it; if riding the gondola, buy tickets immediately and keep passports ready for any casino peek.", "sight", [10]],
+          ["18:20-18:40", "Lord Stow's Bakery", "Egg-tart comparison stop inside the Venetian. For two light eaters: one tart each, maybe a third only if taking it later; warmer is better.", "food", [11]],
+          ["18:40-19:05", "Light ferry food / water", "Keep dinner informal: bao, sandwich, fruit, or snacks for waiting/onboard. Avoid a sit-down dinner because the return ferry and hotel check-in matter more.", "food", [10]],
+          ["19:05-19:25", "Shuttle or bus to Taipa Ferry Terminal", "Shuttle / bus chain: Venetian Macao start -> Venetian shuttle if running, otherwise public bus -> Taipa Ferry Terminal end. Taxi fallback only if the shuttle/bus timing is poor; aim to arrive by 19:30.", "logistics", [10, 12]],
+          ["19:30-20:00", "Taipa terminal immigration and boarding", "Keep passports and ferry QR ready. Follow ticket/redeem, check-in gate, immigration, seat assignment, and boarding flow.", "logistics", [12]],
+          ["20:00-21:00", "Cotai Water Jet to Sheung Wan", "Ferry chain: Taipa Ferry Terminal start -> Cotai Water Jet -> Hong Kong Macau Ferry Terminal / Sheung Wan end. Ticket booked: 20:00 Cotai Water Jet, economy / Cotai Class, 2 adults. Approx. 60 min return crossing.", "logistics", [12, 13]],
+          ["21:00-21:25", "Arrive Sheung Wan and clear HK immigration", "Late-evening arrivals can bunch. Keep the next leg simple and do not add Central or TST detours.", "logistics", [13]],
+          ["21:25-21:45", "MTR back to Ramada", "MTR chain: Sheung Wan start, Island Line toward Kennedy Town -> Sai Ying Pun end -> walk to Ramada. Return here first because the bags are stored at Ramada.", "logistics", [13, 14]],
+          ["21:45-22:00", "Pick up bags at Ramada", "Retrieve luggage, do a quick bag count, and move straight into the hotel-transfer leg.", "logistics", [14]],
+          ["22:00-22:35", "MTR to Hygge with luggage", "MTR chain: Sai Ying Pun start, Island Line toward Chai Wan -> Central transfer, Tsuen Wan Line toward Tsuen Wan -> Tsim Sha Tsui end -> walk to Hygge. Fallback: taxi / Uber Taxi / red urban taxi if immigration runs late, rain is bad, luggage feels annoying, or energy is low.", "logistics", [14, 15]],
+          ["22:35-22:55", "Check in at Hygge", "Room should be ready. Confirm Wi-Fi, breakfast/check-out basics, and tomorrow's Kowloon culture / Mong Kok timing before fully unpacking.", "logistics", [15]],
+          ["22:55-23:15", "Shower, charge, decompress", "Lay out Day 4 essentials before sleeping: Octopus/card, light clothes, sunscreen or rain layer, and camera/phone power.", "logistics", [15]],
+          ["23:15", "Sleep", "Hard stop. Day 4 is an early Kowloon culture + Mong Kok day, so do not add a late TST detour.", "logistics", [15]]
+        ]
+      },
+      {
+        id: "day4",
+        tab: "Day 4",
+        date: "May 29, Fri",
+        title: "Kowloon Culture + Mong Kok + TST Evening",
+        summary: "Kam Wah, Chi Lin / Nan Lian, Kowloon Walled City Park, Dim Sum Here, Watchdrobe, Sneaker Street, Ladies' Market, toy-street browse, local grocery, Ashwin at Black Sugar, Horo straps, and Thai Pai Dong dinner.",
+        points: [
+          ["Hygge TST", 22.2977, 114.1722, "hotel"],
+          ["Kam Wah Cafe", 22.3225, 114.1699, "food"],
+          ["Chi Lin / Nan Lian", 22.3401, 114.2050, "sight"],
+          ["Kowloon Walled City Park", 22.3328, 114.1894, "sight"],
+          ["Dim Sum Here", 22.3188, 114.1712, "food"],
+          ["The Watchdrobe", 22.3165, 114.1710, "shopping"],
+          ["Sneaker Street", 22.3193, 114.1700, "shopping"],
+          ["Ladies' Market", 22.3200, 114.1693, "shopping"],
+          ["Toy Street / toy shops", 22.3190, 114.1696, "shopping"],
+          ["Wellcome Shanghai Street", 22.3150, 114.1687, "shopping"],
+          ["Black Sugar Coffee / Olympian City", 22.3175, 114.1600, "food"],
+          ["Horo Watch Straps", 22.2991, 114.1740, "shopping"],
+          ["Thai Pai Dong Jordan", 22.3063, 114.1676, "food"],
+          ["Hygge TST", 22.2977, 114.1722, "hotel"]
+        ],
+        events: [
+          ["06:50", "Wake at Hygge / out the door 07:30", "Earlier start so the culture + shopping day is not rushed. Pack water, sunscreen, Octopus/card, and power bank.", "logistics", [0]],
+          ["08:00-08:40", "Kam Wah Cafe breakfast", "Quick cha chaan teng breakfast. For two light eaters: share one pineapple bun with butter plus one egg/toast item, then tea or coffee. Fast turnover; order quickly and do not linger.", "food", [1]],
+          ["08:40-09:05", "MTR to Diamond Hill", "MTR chain: Mong Kok start, Tsuen Wan Line toward Tsuen Wan -> Prince Edward transfer, Kwun Tong Line toward Tiu Keng Leng -> Diamond Hill end. Then follow signs / map to Chi Lin and Nan Lian.", "logistics", [1, 2]],
+          ["09:05-10:20", "Chi Lin Nunnery + Nan Lian Garden", "Quiet heritage stop. Walk the timber halls and courtyards at Chi Lin, then the bridge, pond, rockwork, and pavilion views at Nan Lian.", "sight", [2]],
+          ["10:20-10:45", "Transit to Kowloon Walled City Park", "Bus / taxi chain: Diamond Hill Station start -> short bus / taxi per Citymapper -> Tung Tsing Road / Kowloon Walled City Park end. Keep it direct rather than trying to make this a scenic walk.", "logistics", [2, 3]],
+          ["10:45-11:35", "Kowloon Walled City Park", "Former site of the old Walled City, now a Qing-style park with history layered into it. Look for the Yamen, old gate remains, and the contrast between serene landscaping and the site's dense past.", "sight", [3]],
+          ["11:35-12:05", "Transit to Mong Kok", "Bus / minibus chain: Tung Tsing Road / Kowloon City start -> bus / minibus per Citymapper -> Mong Kok / Sai Yee Street end. Land near Dim Sum Here and the Watchdrobe / Sneaker Street cluster.", "logistics", [3, 4]],
+          ["12:05-13:00", "Dim Sum Here lunch", "Best shortlist fit for this route. For two light eaters: one har gow, one siu mai, one cheung fun, and one extra steamed or veg dish only if needed. Lighter: keep it to three steamed dishes and skip the heavier fried items. Fallback: Hop Yik Tai in Sham Shui Po for a lighter, faster cheung fun stop.", "food", [4]],
+          ["13:00-13:30", "Buffer / short walk / restroom", "Protects the Watchdrobe slot and absorbs any drift from the morning.", "logistics", [4, 5]],
+          ["13:30-14:00", "The Watchdrobe Vario try-on", "Keep this to 30 min max. Check fit, strap comfort, clasp feel, dial legibility, and overall on-wrist comfort.", "shopping", [5]],
+          ["14:00-14:45", "Sneaker Street / Fa Yuen Street", "Targeted sneaker browse with ASICS Kayano as the priority. Keep this to 45 min and do not let it become an unfocused full-market crawl unless the mood is right.", "shopping", [6]],
+          ["14:45-15:15", "Ladies' Market", "Keep this to 30 min. Quick HK street-market pass inside the Mong Kok block without adding route complexity.", "shopping", [7]],
+          ["15:15-15:45", "Toy Street / toy-shop browse", "Compact 30-minute curiosity stop. Treat it as a light browse, not a deep collecting detour.", "shopping", [8]],
+          ["15:45-16:35", "Wellcome Shanghai Street grocery stop", "Everyday HK supermarket at Tung Chun Commercial Centre, B/F / G/F / UG/F, 438-444 Shanghai Street, Mong Kok. Better fit than a premium mall grocery. Buy packable local snacks / pantry items: biscuits, instant noodles, tea, candy, pantry condiments, and small sealed sauces only if luggage-safe. Avoid fragile glass, bulky liquids, or anything annoying to carry onward.", "shopping", [9]],
+          ["16:35-17:20", "Slow move / buffer to Olympian City", "Slack after shopping. Use it for sneaker overruns, packing grocery items into the day bag, hydration, restroom time, or an unhurried move west before meeting Ashwin.", "logistics", [9, 10]],
+          ["17:20-17:55", "Olympian City buffer", "Water, restroom, and locate the cafe calmly.", "logistics", [10]],
+          ["17:55-18:25", "Coffee with Ashwin at Black Sugar Coffee", "Locked primary meet spot at G16, G/F, Olympian City 2. Keep it to 30-40 min. Fallback: Cafe & Meal MUJI, Olympian City 2.", "food", [10]],
+          ["18:25-18:55", "Olympic to TST / Granville Circuit", "MTR chain: Olympic start, Tung Chung Line toward Tung Chung -> Nam Cheong transfer, Tuen Ma Line toward Wu Kai Sha -> East Tsim Sha Tsui end; then walk to Granville Circuit / Horo. No hotel loop.", "logistics", [10, 11]],
+          ["18:55-19:40", "Horo watch strap browse", "Focus on Sinn 903 22mm straps: leather, suede, canvas/sailcloth, rubber/FKM, and hybrids. Compare taper, buckle color, thickness, quick-release bars, and whether they can fit straps in-store. Shop may appear as Mainly Files / Horo.", "shopping", [11]],
+          ["19:40-20:00", "Walk to Thai Pai Dong", "Walk chain: Granville Circuit start -> Nathan Road / Jordan -> Man Yuen Street end. Walking is usually cleaner than entering the MTR for one stop; use MTR only if tired or raining.", "logistics", [11, 12]],
+          ["20:00-21:15", "Thai Pai Dong dinner", "Value reset from Red Room: buzzy Bib Gourmand Thai street-food energy, still fun but much more food-forward. For two light eaters: one Wagyu beef boat noodle or regular boat noodle plus one wok-fried dish / grilled skewer / vegetable dish to share. Fallback: Din Tai Fung at Silvercord or Yum Cha on Granville Road if the wait is silly.", "food", [12]],
+          ["21:15-21:45", "Optional Jordan / TST walk / return to Hygge", "Walk chain: Thai Pai Dong / Man Yuen Street start -> Jordan / Nathan Road -> Hygge end. Keep the walk only if energy is good; otherwise go straight back by MTR / taxi.", "sight", [12, 13]],
+          ["22:30", "Sleep at Hygge", "Clean finish after the denser Kowloon day.", "logistics", [13]]
+        ]
+      },
+      {
+        id: "day5",
+        tab: "Day 5",
+        date: "May 30, Sat",
+        title: "Repulse Bay + TST Browse + Causeway Bay",
+        summary: "Early beach day: Cheung Fun Wong, Repulse Bay, Deep Water Bay promenade, Coffee Academics, Hygge shower/reset, Yee Shun, TST browse, Ichiran lunch, Causeway Bay, Ding Ding tram to Wan Chai, My Cup of Tea, and Ho Hung Kee dinner.",
+        points: [
+          ["Hygge TST", 22.2977, 114.1722, "hotel"],
+          ["Cheung Fun Wong", 22.2771, 114.1751, "food"],
+          ["Repulse Bay", 22.2367, 114.1970, "sight"],
+          ["Deep Water Bay", 22.2460, 114.1872, "sight"],
+          ["Coffee Academics", 22.2367, 114.1980, "food"],
+          ["Hygge TST", 22.2977, 114.1722, "hotel"],
+          ["Yee Shun Milk Company", 22.3044, 114.1719, "food"],
+          ["TST / Granville Circuit Browse", 22.2991, 114.1740, "shopping"],
+          ["Ichiran TST", 22.2975, 114.1740, "food"],
+          ["Causeway Bay", 22.2797, 114.1840, "shopping"],
+          ["My Cup of Tea", 22.2779, 114.1714, "food"],
+          ["Ho Hung Kee / Hysan Place", 22.2796, 114.1848, "food"],
+          ["Hygge TST", 22.2977, 114.1722, "hotel"]
+        ],
+        events: [
+          ["06:45", "Wake at Hygge / out the door 07:05", "Check weather, surf flags, and heat. Target out the door by 07:05 with swimwear, towel, sunscreen, hat, water, Octopus, and a light change of clothes for the city block later.", "logistics", [0]],
+          ["07:05-07:30", "Transit to Cheung Fun Wong", "MTR chain: Tsim Sha Tsui start, Tsuen Wan Line toward Central -> Admiralty transfer, Island Line toward Chai Wan -> Wan Chai end; then walk to Cheung Fun Wong.", "logistics", [0, 1]],
+          ["07:30-07:45", "Cheung Fun Wong grab-and-go", "Quick takeaway breakfast. For two light eaters: one plain or mixed cheung fun to share plus fish siu mai or curry fish balls only if you want a little more.", "food", [1]],
+          ["07:45-08:35", "Transit to Repulse Bay", "Bus / minibus chain: Wan Chai / Causeway Bay start -> bus / minibus per Citymapper -> Repulse Bay end. The early start keeps the coast ahead of midday heat.", "logistics", [1, 2]],
+          ["08:35-10:00", "Repulse Bay beach time", "Actual beach block: sand, water, photos, and relaxed time. Use the morning timing for calmer heat, easy photos, and a low-friction beach stop. Swim only if flags and conditions look safe.", "sight", [2]],
+          ["10:00-10:40", "Deep Water Bay promenade", "Flat, easy seafront walk from Repulse Bay toward Deep Water Bay. Scenic movement, not a real hike.", "sight", [2, 3]],
+          ["10:40-11:05", "Coffee Academics beach refreshment", "Locked beach-side drinks stop at The Pulse. Keep it light: iced coffee, cold brew, lemonade-style drink, or another cold drink; Caffe Parabolica is the calmer fallback.", "food", [4]],
+          ["11:05-12:00", "Return to Hygge / TST", "Bus / MTR chain: Repulse Bay start -> bus / minibus to the nearest clean MTR link per Citymapper -> TST / Hygge end. Public transit is default, but taxi or Uber is the practical fallback if beach heat, wet clothes, or timing make the route drag.", "logistics", [4, 5]],
+          ["12:00-12:50", "Hygge shower / reset", "Use the early beach start to create slack. This is a functional rinse/change/cooldown before the food-and-shopping half, not a long hotel hangout.", "logistics", [5]],
+          ["12:50-13:20", "Yee Shun Milk Company reset", "Short sit-down dessert/cafe reset. For two light eaters: one steamed milk pudding to share, or ginger milk pudding for the more distinctive order.", "food", [6]],
+          ["13:20-14:10", "TST browse", "Casual Nathan Road / Kimberley Road / Granville Circuit browsing before lunch. Keep this light: small shops, street texture, and mall-adjacent browsing without turning it into another shopping mission. Horo fallback: if Day 4 Horo gets skipped or runs out of time, use this block for a quick Granville Circuit strap browse instead.", "shopping", [7]],
+          ["14:10-14:55", "Ichiran TST lunch", "Locked ramen lunch. Order for two light eaters: one classic tonkotsu ramen each, or one ramen plus extra noodles only if one of you is actually hungry. Must-try: classic tonkotsu ramen. Lighter: lower richness, lower garlic, lower spice, and no extra add-ons. Flow: structured solo-booth/order-sheet system, efficient even if tired. Fallback: Sister Wah, Shop A1, 13 Electric Road, Tin Hau, for local-HK beef brisket noodles; order one beef brisket noodle in clear broth each, or one bowl plus a small side to share. Expect a small room, likely queue, shared tables, cash-only flow, quick ordering, and no lounging.", "food", [8]],
+          ["14:55-15:30", "Transit to Causeway Bay", "MTR chain: Tsim Sha Tsui start, Tsuen Wan Line toward Central -> Admiralty transfer, Island Line toward Chai Wan -> Causeway Bay end. After lunch, head east for the city-energy half.", "logistics", [8, 9]],
+          ["15:30-18:00", "Causeway Bay city block", "Walk Hysan Place, SOGO, Hennessy Road, Times Square, dense crossings, crowds, and signage-heavy streets. Treat this as urban texture and people-watching rather than a purchase checklist.", "shopping", [9]],
+          ["18:00-18:20", "Ding Ding tram: Causeway Bay to Wan Chai", "Tram chain: Causeway Bay / Hennessy Road tram stop start -> westbound Ding Ding -> Wan Chai / Johnston Road stop end; then walk to My Cup of Tea. Sit upstairs near the front if possible.", "logistics", [9, 10]],
+          ["18:20-18:45", "My Cup of Tea", "Locked tea reset. Order HK milk tea or yuenyeung; add only a very small snack if needed because dinner is next.", "food", [10]],
+          ["18:45-19:05", "Move to Ho Hung Kee / Hysan Place", "MTR / tram chain: Wan Chai start -> Island Line one stop toward Chai Wan or eastbound Ding Ding -> Causeway Bay / Hysan Place end. This replaces the North Point hotel-rooftop detour with a cleaner Causeway Bay dinner.", "logistics", [10, 11]],
+          ["19:05-20:15", "Ho Hung Kee dinner", "Value reset from Cruise: one-Michelin-star local wonton noodle / congee institution in a clean, comfortable mall setting. For two light eaters: one wonton noodle soup plus one congee or lighter noodle/rice dish to share; add dim sum only if still hungry. No reservation needed, but sanity-check same-day hours.", "food", [11]],
+          ["20:15-20:45", "Optional Causeway Bay decompression", "Slow Hysan Place / Causeway Bay exit, restroom, light browse, or go straight back if energy is low.", "sight", [11]],
+          ["20:45-21:15", "MTR back to Hygge", "MTR chain: Causeway Bay start, Island Line toward Kennedy Town -> Admiralty transfer, Tsuen Wan Line toward Tsuen Wan -> Tsim Sha Tsui end; walk to Hygge.", "logistics", [11, 12]],
+          ["22:30", "Sleep at Hygge", "Earlier night gives Day 6 a clean runway for the cultural morning and Grand Hyatt move.", "logistics", [12]]
+        ]
+      },
+      {
+        id: "day6",
+        tab: "Day 6",
+        date: "May 31, Sun",
+        title: "Lantau + Grand Hyatt Switch",
+        summary: "Early Hygge checkout, Grand Hyatt bag drop, Kam Fung breakfast, booked Ngong Ping Standard Cabin cable car up, Big Buddha, Po Lin vegetarian lunch, Bus 23 down to Tung Chung, Sake Central, Hyatt reset, and Boat King dinner.",
+        points: [
+          ["Hygge TST", 22.2977, 114.1722, "hotel"],
+          ["Grand Hyatt Wan Chai", 22.2800, 114.1730, "hotel"],
+          ["Kam Fung Restaurant", 22.2778, 114.1754, "food"],
+          ["Tung Chung", 22.2895, 113.9410, "logistics"],
+          ["Ngong Ping", 22.2559, 113.9051, "sight"],
+          ["Big Buddha", 22.2540, 113.9050, "sight"],
+          ["Po Lin Monastery", 22.2544, 113.9070, "food"],
+          ["Sake Central / PMQ", 22.2836, 114.1510, "shopping"],
+          ["Grand Hyatt Wan Chai", 22.2800, 114.1730, "hotel"],
+          ["Boat King", 22.2765, 114.1710, "food"],
+          ["Wan Chai Harbourfront", 22.2820, 114.1760, "sight"],
+          ["Grand Hyatt Wan Chai", 22.2800, 114.1730, "hotel"]
+        ],
+        events: [
+          ["06:15", "Wake at Hygge / out the door 07:00", "Finish packing early so the hotel-switch logistics, Lantau block, and later Sake Central stop all stay clean.", "logistics", [0]],
+          ["07:00-07:25", "Taxi to Grand Hyatt", "Taxi chain: Hygge House / 72 Nathan Road start -> cross-harbour taxi -> Grand Hyatt / 1 Harbour Road end. Preferred hotel-switch move; drop bags first so Lantau stays luggage-free. MTR remains fallback if traffic is unusually bad.", "logistics", [0, 1]],
+          ["07:25-07:30", "Bag drop at Grand Hyatt", "Concierge drop only; full check-in happens later.", "logistics", [1]],
+          ["07:30-08:00", "Kam Fung Restaurant breakfast", "Best route fit for the morning. For two light eaters: one pineapple bun with butter to share, one scrambled egg/toast or sandwich item, and tea/coffee. Fallback: Capital Cafe in Wan Chai.", "food", [2]],
+          ["08:00-09:00", "Wan Chai / Admiralty to Tung Chung", "MTR chain: Wan Chai start, Island Line toward Kennedy Town -> Central / Hong Kong Station transfer, Tung Chung Line toward Tung Chung -> Tung Chung end -> walk to Ngong Ping 360 terminal. Keep this direct rather than adding another stop.", "logistics", [2, 3]],
+          ["09:15-09:40", "Ngong Ping 360 one-way up", "Cable car chain: Tung Chung Cable Car Terminal start -> Ngong Ping 360 one-way Standard Cabin up -> Ngong Ping Cable Car Terminal end. Ticket booked: Standard Cabin one-way, flexible 30-day ticket, 2 adults. Keep the voucher/QR available offline. This is both transit and attraction: bay, airport, hills, sea views, and the Big Buddha reveal near the end.", "logistics", [3, 4]],
+          ["09:40-10:40", "Tian Tan Buddha / Big Buddha", "Main Lantau anchor. Arrive, orient, use water/restroom if needed, and climb the steps if heat and energy are good.", "sight", [5]],
+          ["10:40-11:20", "Po Lin Monastery", "Quiet monastery block after the Buddha. Walk the halls and courtyards respectfully; this is an active religious site, not just a photo stop.", "sight", [6]],
+          ["11:20-12:05", "Vegetarian lunch at Po Lin Monastery", "Keep the monastery lunch from the earlier Lantau version. For two light eaters: share one simple vegetarian set or two small dishes with tea. Keep the flow low-key and respectful.", "food", [6]],
+          ["12:05-12:30", "Ngong Ping buffer", "Water, restroom, shade, and a short pause before heading back down.", "logistics", [4]],
+          ["12:30-13:30", "Bus 23 down to Tung Chung", "Default return: Ngong Ping bus terminus start, New Lantao Bus Route 23 toward Tung Chung Tat Tung Road -> Tung Chung Tat Tung Road bus terminus end. Allow roughly 50-60 min including wait/boarding. Cable car down is now only the fallback if the bus queue/weather/energy makes it clearly better.", "logistics", [4, 3]],
+          ["13:30-14:30", "Tung Chung to Central / PMQ", "MTR chain: Tung Chung start, Tung Chung Line toward Hong Kong -> Hong Kong Station end -> walk through Central / Soho toward PMQ. Direct return into the city for the sake errand.", "logistics", [3, 7]],
+          ["14:30-15:00", "Sake Central pickup", "Sparkling sake pickup stays in. Keep this focused on the errand first, then browse only if timing and energy are still good.", "shopping", [7]],
+          ["15:00-15:30", "Return to Grand Hyatt", "MTR chain: PMQ / Sake Central start -> walk to Central or Sheung Wan station, Island Line toward Chai Wan -> Wan Chai end -> walk / short taxi to Grand Hyatt. Taxi is the practical fallback if heat or timing make public transit annoying.", "logistics", [7, 8]],
+          ["15:30-18:45", "Grand Hyatt check-in / pool / room reset", "Recovery block after the outdoor day. Pool if you feel like it; otherwise shower, rest, and room time before dinner.", "logistics", [8]],
+          ["19:15-20:45", "Boat King dinner", "Lively modern Cantonese / typhoon-shelter direction without the Hyatt markup. Order for two light eaters: two to three dishes max, ideally one signature wok/seafood dish, one greens/veg dish, and a carb only if needed.", "food", [9]],
+          ["21:00-21:45", "Optional Wan Chai Harbourfront walk", "Easy post-dinner decompression near the Hyatt if energy is still good; otherwise skip and head straight back.", "sight", [9, 10]],
+          ["22:00 onward", "Back to Grand Hyatt room", "Keep the night light so Day 7 stays flexible.", "logistics", [10, 11]]
+        ]
+      },
+      {
+        id: "day7",
+        tab: "Day 7",
+        date: "Jun 1, Mon",
+        title: "Wan Chai Morning + Airport",
+        summary: "Final day from Grand Hyatt: early Waso takeaway breakfast, slower Hong Kong Park breakfast, optional Blue House / Lee Tung, longer hotel reset, Ăn Chơi lunch, Tram View Cafe, Airport Express in-town bag drop, and CX623.",
+        points: [
+          ["Grand Hyatt Wan Chai", 22.2800, 114.1730, "hotel"],
+          ["Waso Cafe", 22.2792, 114.1753, "food"],
+          ["Hong Kong Park", 22.2775, 114.1618, "sight"],
+          ["Blue House / Lee Tung", 22.2765, 114.1730, "sight"],
+          ["Grand Hyatt Wan Chai", 22.2800, 114.1730, "hotel"],
+          ["Hong Kong Station", 22.2849, 114.1589, "logistics"],
+          ["Ăn Chơi", 22.2850, 114.1507, "food"],
+          ["Tram View Cafe", 22.2775, 114.1595, "food"],
+          ["Hong Kong Station", 22.2849, 114.1589, "logistics"],
+          ["HKG Airport", 22.3080, 113.9185, "logistics"]
+        ],
+        events: [
+          ["06:30", "Wake at Grand Hyatt / out the door 07:15", "Earlier start buys back hotel and airport slack. Check in online for CX623 if needed and keep passports / boarding documents separate from checked luggage.", "logistics", [0]],
+          ["07:25-07:40", "Waso Cafe takeaway breakfast", "Keep it fast and light. For two light eaters: one pineapple butter bun with tomato and egg to share, one milk tea or champagne milk tea each, and at most one extra simple bun if needed. Fallback: My Cup of Tea.", "food", [1]],
+          ["07:45-09:05", "Hong Kong Park + park breakfast", "Slower final-morning park block. Eat only in the outdoor park section, then use the remaining time for a simple walk, benches, photos, and a calm start. Indoor add-ons are intentionally skipped.", "sight", [2]],
+          ["09:05-09:35", "Optional Blue House + Lee Tung Avenue", "Optional Wan Chai neighborhood contrast if energy and timing are good. Blue House gives old-HK urban history / architecture; Lee Tung Avenue is the cleaner pedestrian contrast. If you would rather protect the room reset, skip this and go straight back to Grand Hyatt.", "sight", [3]],
+          ["09:35-11:20", "Back to Grand Hyatt / repack / collect luggage", "Longer final hotel block created by moving grocery shopping to Day 4. Repack calmly, sort liquids carefully, shower if needed, keep a small airport pouch ready, and do one last room sweep before leaving for good.", "logistics", [3, 4]],
+          ["11:20-11:45", "Grand Hyatt to Hong Kong Station", "MTR chain: Grand Hyatt start -> walk to Wan Chai station, Island Line toward Kennedy Town -> Central end -> walk inside the Central / Hong Kong Station complex to Airport Express in-town check-in. Taxi is acceptable fallback if heat, rain, or bag drag makes the MTR inefficient.", "logistics", [4, 5]],
+          ["11:45-12:10", "Cathay in-town check-in + bag drop", "Do the Hong Kong Station bag drop early while margin is abundant. If in-town bag drop fails, take bags directly to HKIA and use airport counters.", "logistics", [5]],
+          ["12:10-12:30", "Hong Kong Station to Ăn Chơi", "MTR chain: Hong Kong Station start -> walk to Central station, Island Line toward Kennedy Town -> Sheung Wan end; then walk to Mercer Street.", "logistics", [5, 6]],
+          ["12:30-13:20", "Ăn Chơi lunch", "Lighter non-Cantonese final lunch that still feels worthwhile. For two light eaters: one banh mi to share plus one pho/noodle/salad bowl, or two lighter plates if you want to keep it even cleaner.", "food", [6]],
+          ["13:20-13:40", "Ăn Chơi to Tram View Cafe", "MTR chain: Sheung Wan start, Island Line toward Chai Wan -> Central end; then walk toward Tramway Path / Garden Road.", "logistics", [6, 7]],
+          ["13:40-15:00", "Tram View Cafe", "Relaxed final-stop block. Keep this as coffee / tea, a few photos or videos, and a sit-down pause rather than another meal. Better here than on Day 2 because it no longer competes with the Peak chain.", "food", [7]],
+          ["15:00-15:20", "Tram View Cafe to Hong Kong Station", "Walk / taxi chain: Tramway Path / Garden Road start -> walk or short taxi downhill -> Hong Kong Station end. Return toward the Airport Express zone.", "logistics", [7, 8]],
+          ["15:20-18:00", "Central / Hong Kong Station flex block", "Sit down, light browse, coffee, or just stay calm near the train. This is deliberate slack, not empty space; it protects the airport move and gives room if lunch or Tram View runs long.", "logistics", [8]],
+          ["18:00-18:24", "Airport Express to HKIA", "Airport Express chain: Hong Kong Station start -> Airport Express -> Airport Station / HKIA end. Use the ride to reorganize passports, boarding passes, and departure documents.", "logistics", [8, 9]],
+          ["18:24-20:10", "HKIA T1 immigration / security / lounge", "Strong airport buffer. If in-town bag drop failed, go straight to Cathay counters first. Keep dinner light before the late flight and use remaining HKD on snacks, water, or airport convenience-store items.", "food", [9]],
+          ["20:10-20:30", "Gate move and boarding buffer", "HKG gates can be a long walk or train ride from lounges. Start moving before final call.", "logistics", [9]],
+          ["20:55", "CX623 HKG to BLR", "Departure. Keep one layer handy because aircraft cabins can run cold.", "logistics", [9]],
+          ["01:55 IST Jun 2", "CX623 lands BLR", "India-time arrival after a full final day. Keep immigration and baggage energy realistic.", "logistics", [9]]
+        ]
+      }
+    ];
+
+    const tabs = document.getElementById("tabs");
+    const pages = document.getElementById("pages");
+
+    function makeMap(day) {
+      return `
+        <div class="map-wrap">
+          <div class="map-label">
+            <strong>${day.tab || "Map"}</strong>
+            <span>${day.title}</span>
+          </div>
+          <div class="leaflet-map" data-leaflet-day="${day.id}" aria-label="${day.title} map"></div>
+        </div>
+        <div class="legend">
+          <span class="legend-item"><span class="dot"></span> Sights / stays</span>
+          <span class="legend-item"><span class="dot shopping"></span> Shopping</span>
+          <span class="legend-item"><span class="dot food"></span> Food / drink</span>
+        </div>
+        ${makeStopKey(day)}
+        <div class="map-note">${day.overview ? "Overview pins show the main trip anchors across Hong Kong, Macau, Lantau, beach, shopping, hotels, and airport." : "Numbered pins match unique locations. Repeated stops reuse the first number and still appear each time in the detailed route."}</div>
+      `;
+    }
+
+    function stopNumber(number, type) {
+      return `<span class="stop-num ${markerTypeClass(type)}">${number}</span>`;
+    }
+
+    function pointKey(point) {
+      return `${point[0].toLowerCase().trim()}|${point[1].toFixed(4)},${point[2].toFixed(4)}`;
+    }
+
+    function uniqueStops(day) {
+      const seen = new Map();
+      const stops = [];
+      day.points.forEach((point, index) => {
+        const key = pointKey(point);
+        if (seen.has(key)) return;
+        const meta = {
+          canonicalIndex: index,
+          displayNumber: stops.length + 1,
+          point
+        };
+        seen.set(key, meta);
+        stops.push(meta);
+      });
+      return stops;
+    }
+
+    function stopMeta(day, index) {
+      const key = pointKey(day.points[index]);
+      return uniqueStops(day).find(stop => pointKey(stop.point) === key);
+    }
+
+    function makeStopKey(day) {
+      return `
+        <div class="stop-key">
+          <div class="stop-key-head">
+            <strong>Numbered location key</strong>
+            <span>${day.overview ? "Full-trip anchors." : `Unique locations for ${day.tab}; repeats reuse the first number.`}</span>
+          </div>
+          <ol class="stop-key-list">
+            ${uniqueStops(day).map(stop => `
+              <li>
+                ${stopNumber(stop.displayNumber, stop.point[3])}
+                <span>${stop.point[0]}</span>
+              </li>
+            `).join("")}
+          </ol>
+        </div>
+      `;
+    }
+
+    function eventStops(day, event, fallbackIndex) {
+      const override = event[4];
+      const markerIndexes = Array.isArray(override)
+        ? override
+        : Number.isInteger(override)
+          ? [override]
+          : [eventMarkerIndex(day, event, fallbackIndex)];
+      return markerIndexes
+        .filter(markerIndex => markerIndex >= 0 && markerIndex < day.points.length)
+        .map(stopIndex => ({ stopIndex, point: day.points[stopIndex], ...stopMeta(day, stopIndex) }));
+    }
+
+    function placePills(stops) {
+      return stops.map(({ displayNumber, point }) => `
+        <span class="place-pill">${stopNumber(displayNumber, point[3])}<span>${point[0]}</span></span>
+      `).join("");
+    }
+
+    function eventMarkup(day, event, fallbackIndex) {
+      const stops = eventStops(day, event, fallbackIndex);
+      return `
+        <article class="event" data-marker="${stops.map(stop => stop.canonicalIndex).join(",")}">
+          <div class="time">${event[0]}</div>
+          <div>
+            <div class="event-heading">
+              <div class="event-title-copy">
+                <h3>${event[1]}</h3>
+                <div class="event-place-list">${placePills(stops)}</div>
+              </div>
+            </div>
+            <p>${event[2]}</p>
+          </div>
+        </article>
+      `;
+    }
+
+    function miniEventMarkup(day, event, fallbackIndex) {
+      const stops = eventStops(day, event, fallbackIndex);
+      return `
+        <div class="mini-event">
+          <span>${event[0]}</span>
+          <span class="mini-event-main">
+            <span class="mini-event-title"><strong>${event[1]}</strong></span>
+            <span class="mini-event-place">${placePills(stops)}</span>
+            ${event[2]}
+          </span>
+        </div>
+      `;
+    }
+
+    function eventMarkerIndex(day, event, fallbackIndex) {
+      const title = event[1].toLowerCase();
+      let bestIndex = Math.min(fallbackIndex, day.points.length - 1);
+      let bestScore = 0;
+      day.points.forEach((point, index) => {
+        const label = point[0].toLowerCase();
+        const labelParts = label.split(/[^a-z0-9]+/).filter(token => token.length >= 4);
+        let score = 0;
+        if (title.includes(label) || label.includes(title)) score += 10;
+        labelParts.forEach(token => {
+          if (title.includes(token)) score += 2;
+        });
+        if ((title.includes("airport") || title.includes("hkg")) && label.includes("hkg")) score += 6;
+        if (title.includes("sinn") && label.includes("city chain")) score += 8;
+        if (title.includes("bag") && label.includes("ramada")) score += 5;
+        if (title.includes("watchdrobe") && label.includes("watchdrobe")) score += 8;
+        if (title.includes("sneaker") && label.includes("sneaker")) score += 8;
+        if (title.includes("ashwin") && label.includes("olympic")) score += 8;
+        if (title.includes("symfony") && label.includes("tst")) score += 4;
+        if (title.includes("symphony") && label.includes("tst")) score += 4;
+        if (score > bestScore) {
+          bestScore = score;
+          bestIndex = index;
+        }
+      });
+      return bestIndex;
+    }
+
+    function makeTimeline(day) {
+      if (day.overview) {
+        return makeOverviewList();
+      }
+      return makeRouteList(day);
+    }
+
+    function makeOverviewList() {
+      return `
+        <div class="route-list overview-route-list">
+          ${days.filter(day => !day.overview).map(day => `
+            <article class="event overview-summary-event">
+              <div class="time">${day.tab}<span>${day.date}</span></div>
+              <div>
+                <div class="event-heading">
+                  <div class="event-title-copy">
+                    <h3>${day.title}</h3>
+                  </div>
+                </div>
+                <p>${day.summary}</p>
+              </div>
+            </article>
+          `).join("")}
+        </div>
+      `;
+    }
+
+    function makeRouteList(day) {
+      return `
+        <div class="route-list">
+          ${day.events.map((event, index) => eventMarkup(day, event, index)).join("")}
+        </div>
+      `;
+    }
+
+    function makePage(day, index) {
+      const displayDay = day;
+      return `
+        <article class="page ${index === 0 ? "active" : ""}" id="${day.id}">
+          <div class="layout">
+            <section class="panel">
+              <div class="panel-head">
+                <p class="eyebrow">${day.date}</p>
+                <h2>${day.title}</h2>
+                <p class="summary" data-map-summary>${day.summary}</p>
+              </div>
+              <div data-map-holder>${makeMap(displayDay)}</div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <p class="eyebrow">${day.overview ? "Full-trip shape" : "Every time block in order"}</p>
+                <h2>${day.overview ? "Day Summary" : "Detailed Agenda"}</h2>
+              </div>
+              ${makeTimeline(day)}
+            </section>
+          </div>
+        </article>
+      `;
+    }
+
+    tabs.innerHTML = days.map((day, index) => `
+      <button class="tab ${index === 0 ? "active" : ""}" type="button" data-target="${day.id}">
+        ${day.tab}<span>${day.date}</span>
+      </button>
+    `).join("");
+
+    pages.innerHTML = days.map(makePage).join("");
+
+    function markerTypeClass(type) {
+      return type === "shopping" || type === "food" || type === "logistics" ? type : "default";
+    }
+
+    function fitMapToStops(map, latLngs) {
+      if (latLngs.length === 1) {
+        map.setView(latLngs[0], 14);
+      } else {
+        map.fitBounds(latLngs, { paddingTopLeft: [30, 82], paddingBottomRight: [30, 30], maxZoom: 14 });
+      }
+    }
+
+    function addResetControl(map, latLngs) {
+      const resetControl = L.control({ position: "topright" });
+      resetControl.onAdd = () => {
+        const container = L.DomUtil.create("div", "leaflet-bar leaflet-reset-control");
+        const button = L.DomUtil.create("button", "", container);
+        button.type = "button";
+        button.textContent = "Reset";
+        button.title = "Reset map view to all stops";
+        button.setAttribute("aria-label", "Reset map view to all stops");
+        L.DomEvent.disableClickPropagation(container);
+        L.DomEvent.on(button, "click", event => {
+          L.DomEvent.preventDefault(event);
+          fitMapToStops(map, latLngs);
+        });
+        return container;
+      };
+      resetControl.addTo(map);
+    }
+
+    function setupMapInteractions(scope = document) {
+      scope.querySelectorAll("[data-leaflet-day]").forEach(container => {
+        if (!window.L) {
+          container.innerHTML = "<div style='padding:18px;color:#667277'>Map tiles need an internet connection to load.</div>";
+          return;
+        }
+        if (container._leafletMap) {
+          setTimeout(() => {
+            container._leafletMap.invalidateSize();
+            if (container._leafletLatLngs?.length) {
+              fitMapToStops(container._leafletMap, container._leafletLatLngs);
+            }
+          }, 0);
+          return;
+        }
+        const day = days.find(item => item.id === container.dataset.leafletDay);
+        if (!day) return;
+
+        const map = L.map(container, {
+          scrollWheelZoom: true,
+          zoomControl: false,
+          attributionControl: true,
+          worldCopyJump: true
+        });
+        container._leafletMap = map;
+
+        const primaryTiles = L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
+          maxZoom: 19,
+          attribution: "&copy; OpenStreetMap contributors &copy; CARTO"
+        }).addTo(map);
+        let fallbackTilesLoaded = false;
+        primaryTiles.on("tileerror", () => {
+          if (fallbackTilesLoaded) return;
+          fallbackTilesLoaded = true;
+          L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            maxZoom: 19,
+            attribution: "&copy; OpenStreetMap contributors"
+          }).addTo(map);
+        });
+        L.control.zoom({ position: "topright" }).addTo(map);
+        L.control.scale({ imperial: false, position: "bottomleft" }).addTo(map);
+
+        const uniqueStopMetas = uniqueStops(day);
+        const coordinateCounts = new Map();
+        uniqueStopMetas.forEach(({ point }) => {
+          const key = `${point[1].toFixed(4)},${point[2].toFixed(4)}`;
+          coordinateCounts.set(key, (coordinateCounts.get(key) || 0) + 1);
+        });
+        const coordinateSeen = new Map();
+        const latLngs = uniqueStopMetas.map(({ point }) => {
+          const [, lat, lon] = point;
+          const key = `${lat.toFixed(4)},${lon.toFixed(4)}`;
+          const count = coordinateCounts.get(key);
+          if (count === 1) return [lat, lon];
+          const seen = coordinateSeen.get(key) || 0;
+          coordinateSeen.set(key, seen + 1);
+          const angle = ((Math.PI * 2) / count) * seen - Math.PI / 2;
+          const offset = 0.00036;
+          return [lat + Math.sin(angle) * offset, lon + Math.cos(angle) * offset];
+        });
+        container._leafletLatLngs = latLngs;
+        const markers = [];
+        uniqueStopMetas.forEach((stop, index) => {
+          const [label, , , type] = stop.point;
+          const icon = L.divIcon({
+            className: "leaflet-number-icon",
+            html: `<div class="stop-marker ${markerTypeClass(type)}" data-marker-pin="${stop.canonicalIndex}"><span>${stop.displayNumber}</span></div>`,
+            iconSize: [32, 32],
+            iconAnchor: [16, 30],
+            popupAnchor: [0, -26]
+          });
+          const marker = L.marker(latLngs[index], { icon }).addTo(map);
+          marker.bindPopup(`<strong>${stop.displayNumber}. ${label}</strong>`);
+          markers[stop.canonicalIndex] = marker;
+        });
+        container._leafletMarkers = markers;
+        addResetControl(map, latLngs);
+
+        fitMapToStops(map, latLngs);
+        setTimeout(() => map.invalidateSize(), 0);
+      });
+    }
+
+    function focusMarker(page, markerIds) {
+      const activeIds = String(markerIds).split(",").filter(Boolean);
+      page.querySelectorAll("[data-marker-pin]").forEach(marker => {
+        marker.classList.toggle("active", activeIds.includes(marker.dataset.markerPin));
+      });
+      const mapContainer = page.querySelector(".leaflet-map");
+      const marker = mapContainer?._leafletMarkers?.[Number(activeIds[0])];
+      if (marker && mapContainer._leafletMap) {
+        marker.openPopup();
+        mapContainer._leafletMap.panTo(marker.getLatLng(), { animate: true, duration: 0.45 });
+      }
+    }
+
+    tabs.addEventListener("click", (event) => {
+      const button = event.target.closest(".tab");
+      if (!button) return;
+      document.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t === button));
+      document.querySelectorAll(".page").forEach(p => p.classList.toggle("active", p.id === button.dataset.target));
+      history.replaceState(null, "", `#${button.dataset.target}`);
+      setupMapInteractions(document.getElementById(button.dataset.target));
+    });
+
+    pages.addEventListener("click", (event) => {
+      const item = event.target.closest(".event");
+      if (!item) return;
+      const page = item.closest(".page");
+      const markerId = item.dataset.marker;
+      page.querySelectorAll(".event").forEach(eventItem => eventItem.classList.toggle("active", eventItem === item));
+      focusMarker(page, markerId);
+    });
+
+    setupMapInteractions();
+
+    const initial = location.hash.replace("#", "");
+    if (initial) {
+      const button = document.querySelector(`.tab[data-target="${initial}"]`);
+      if (button) button.click();
+    }
+  </script>
+</body>
+</html>
